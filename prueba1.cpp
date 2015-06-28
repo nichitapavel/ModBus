@@ -54,7 +54,6 @@ int testea(ModbusServer &mbs
 }
 
 int main (int argc, char *argv[]) {
-
   //Procesamos parámetros de entrada para fijar SalSiFallo
   if( (argc > 1) ) {
     char* ptfin;

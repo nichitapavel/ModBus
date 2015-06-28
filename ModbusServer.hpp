@@ -10,6 +10,7 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <math.h>
+#include <bitset>
 
 //Define section
 #define DReadOut 0x01

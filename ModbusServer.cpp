@@ -2,6 +2,8 @@
 
 #define DIGITAL_INPUT_CAP 14
 #define ANALOG_OUTPUT_FACTOR 4
+#define ONE 0x00000001
+#define ZERO 0x00000000
 
 using namespace std;
 
@@ -42,7 +44,28 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
 
 vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
 {
+  vector<byte> output;
+  int i = 0;
+  byte coil_value = 0x0;
 
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  int coils_to_read = ByteToInt(input[4], input[5]);
+  output.push_back((byte)(coils_to_read));
+
+  int coils_address = ByteToInt(input[2], input[3]);
+  for (i = 0; i < coils_to_read; i++)
+    if (this->digital_output[coils_address+i])
+    {
+      coil_value <<= 1;
+      coil_value ^= ONE;
+    }
+
+  output.push_back(coil_value);
+
+  AddVector(&output, CRC16(output));
+
+  return output;
 }
 
 vector<byte> ModbusServer::ReadAnalogOutput_03(vector<byte> input)
@@ -53,7 +76,7 @@ vector<byte> ModbusServer::ReadAnalogOutput_03(vector<byte> input)
   output.push_back(input[0]);
   output.push_back(input[1]);
   int coils_to_read = ByteToInt(input[4], input[5]);
-  output.push_back((char)(2 * coils_to_read));
+  output.push_back((byte)(2 * coils_to_read));
   int coils_address = ByteToInt(input[2], input[3]);
 
   for (i = 0; i < coils_to_read; i++)
@@ -165,7 +188,7 @@ void ModbusServer::SetData()
 {
   unsigned int i;
   //Digital Output
-  for (i = 1; i < this->digital_output.size(); i+=2)
+  for (i = 0; i < this->digital_output.size(); i+=2)
     this->digital_output[i] = true;
 
   //Analog Output
