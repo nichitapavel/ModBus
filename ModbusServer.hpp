@@ -29,6 +29,7 @@ using namespace std;
 class  ModbusServer {
 
 public:
+  clock_t begin_time;
   vector<bool> digital_output;
   vector<bool> digital_input;
   vector<int> analog_output;
@@ -50,7 +51,9 @@ private:
   vector<byte> CRC16( vector<byte> mensaje, int len);
   vector<byte> CRC16( vector<byte> mensaje);
   void PrintVectors(void);
+  void SetData(void);
 
+  vector<byte> ReadDigitalOutput_01(vector<byte> input);
   vector<byte> ReadAnalogOutput_03(vector<byte> input);
 };
 
