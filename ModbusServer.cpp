@@ -5,7 +5,8 @@
 
 using namespace std;
 
-ModbusServer::ModbusServer(byte id) {
+ModbusServer::ModbusServer(byte id)
+{
   const clock_t begin_time = clock();
 
   this->digital_output = vector<bool> (20, false);
@@ -59,12 +60,6 @@ ModbusServer::ModbusServer(byte id) {
   for (i = 0; i < DIGITAL_INPUT_CAP; i++)
     if(this->analog_input[i] % 2 == 0)
       this->digital_input[i] = true;
-
-  //Printing Vector
-  PrintDigitalVector(this->digital_output, "Output");
-  PrintDigitalVector(this->digital_input, "Input");
-  PrintAnalogVector(this->analog_output, "Output");
-  PrintAnalogVector(this->analog_input, "Input");
 }
 
 ModbusServer::~ModbusServer() { }
@@ -73,12 +68,37 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
 {
   vector<byte> output;
 
+    switch (recibido[1])
+    {
+      case 0x03:
+        /*cout << recibido[0] << endl;
+        cout << recibido[1] << endl;
+        cout << recibido[2] << endl;
+        cout << recibido[3] << endl;
+        cout << recibido[4] << endl;
+        cout << recibido[5] << endl;
+        cout << recibido[6] << endl;
+        cout << recibido[7] << endl;
+        PrintQueryVector(recibido);*/
+        output = ReadAnalogOutput_03(recibido);
+        PrintVectors();
+        return output;
+        break;
+    }
+
   return output;
 }
 
-vector<byte> ModbusServer::ReadAnalogOutput()
+vector<byte> ModbusServer::ReadAnalogOutput_03(vector<byte> input)
 {
   vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  output.push_back(2 * ByteToInt(input[4], input[5]));
+  int a = ByteToInt(input[2], input[3]);
+  AddVector(&output, IntToByte(this->analog_output[a]));
+  AddVector(&output, CRC16(output));
 
   return output;
 }
@@ -90,7 +110,7 @@ void ModbusServer::PrintDigitalVector(vector<bool> input, string str)
   cout << "Digital " << str << " -> [ ";
   for (i = 0; i < input.size(); i++)
     cout << input[i] << " ";
-  cout << "]\n";
+  cout << "]" << endl;
 }
 
 void ModbusServer::PrintAnalogVector(vector<int> input, string str)
@@ -100,6 +120,82 @@ void ModbusServer::PrintAnalogVector(vector<int> input, string str)
   cout << "Analog " << str << " -> [ ";
   for (i = 0; i < input.size(); i++)
     cout << input[i] << " ";
-  cout << "]\n";
+  cout << "]" << endl;
 }
 
+void ModbusServer::PrintQueryVector(vector<byte> input)
+{
+  unsigned int i;
+
+  cout << "Query -> [ ";
+  for (i = 0; i < input.size(); i++)
+    cout << input[i] << " ";
+  cout << "]" << endl;
+}
+
+int ModbusServer::ByteToInt(byte byte1, byte byte2)
+{
+  return ( (int) byte2 ) + ( (int) byte1 << 8 );
+}
+
+vector<byte> ModbusServer::IntToByte(int input)
+{
+  vector<byte> output;
+
+  output.push_back((char)(input >> 8));
+  output.push_back((char)input);
+
+  return output;
+}
+
+void ModbusServer::AddVector(vector<byte> *vector_1, vector<byte> vector_2)
+{
+  unsigned int i;
+  for (i = 0; i < vector_2.size(); i++)
+    vector_1->push_back(vector_2[i]);
+}
+
+/*! Calcula el código CRC-16 de los primeros 'len' bytes
+ * \param mensaje vector que contiene los bytes de trabajo
+ * \param len numero de bytes considerados
+ * \return vector con los dos bytes del CRC en el orden "correcto"
+*/
+vector<byte>  ModbusServer::CRC16( vector<byte> mensaje, int len)
+{
+#define POLY 0xA001
+  int i;
+  unsigned int crc=0xFFFF;
+
+
+  for(int ba=0; ba<len; ba++) {
+    crc ^= mensaje[ba];
+    for(i=0; i<8; i++) {
+      if( crc & 0x0001 ) {
+        crc = (crc>>1) ^ POLY;
+      } else {
+        crc >>= 1;
+      }
+    }
+  }
+  vector<byte> codr;
+  codr.push_back(crc & 0xff);
+  codr.push_back(crc >> 8);
+  return codr;
+}
+
+/*! Calcula el código CRC-16 de TODOS los bytes del vector
+ * \param mensaje vector de bytes de trabajo
+ * \return vector con los dos bytes del CRC en el orden "correcto"
+ */
+vector<byte>  ModbusServer::CRC16( vector<byte> mensaje)
+{
+  return CRC16( mensaje, mensaje.size() );
+}
+
+void ModbusServer::PrintVectors(void)
+{
+  PrintDigitalVector(this->digital_output, "Output");
+  PrintDigitalVector(this->digital_input, "Input");
+  PrintAnalogVector(this->analog_output, "Output");
+  PrintAnalogVector(this->analog_input, "Input");
+}
