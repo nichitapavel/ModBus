@@ -29,3 +29,5 @@
 
 bin/
 obj/
+obj/Debug
+
