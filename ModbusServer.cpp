@@ -64,40 +64,47 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
 vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
 {
   vector<byte> output;
-  int i;
-  int counter = 0;
+  int i, j;
   byte coils_value = 0x0;
 
   output.push_back(input[0]);
   output.push_back(input[1]);
   int coils_to_read = BytesToInt(input[4], input[5]);
-  output.push_back( (byte) (ceil( (float) coils_to_read/8 )) );
+  int bytes = (byte) (ceil( (float) coils_to_read/8 ));
+  output.push_back(bytes);
   int coils_address = BytesToInt(input[2], input[3]);
 
-  for (i = coils_address + coils_to_read; i > coils_address; i--)
+  for (i = 0; i < bytes; i++)
   {
-    if (this->digital_output[i-1])
+    int j_inicio, j_fin;
+
+    j_inicio = coils_address + 8 * i;
+    if (coils_to_read - 8 > 0)
     {
-      coils_value <<= 1;
-      coils_value ^= ONE;
+      j_fin = j_inicio + 8;
+      coils_to_read -= 8;
     }
     else
-    {
-      coils_value <<= 1;
-      coils_value ^= ZERO;
-    }
+      j_fin = j_inicio + coils_to_read;
 
-    counter++;
-    if (counter == 8)
+    for (j = j_fin; j >  j_inicio; j--)
     {
-      output.push_back(coils_value);
-      coils_value = ZERO;
-      counter = 0;
+      if (this->digital_output[j-1])
+      {
+        coils_value <<= 1;
+        coils_value ^= ONE;
+      }
+      else
+      {
+        coils_value <<= 1;
+        coils_value ^= ZERO;
+      }
     }
+    output.push_back(coils_value);
+    coils_value = ZERO;
   }
 
-  if (counter != 0)
-    output.push_back(coils_value);
+
 
   AddVector(&output, CRC16(output));
 
