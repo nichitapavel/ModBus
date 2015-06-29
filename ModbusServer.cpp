@@ -63,31 +63,32 @@ vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
   output.push_back(input[1]);
   int coils_to_read = ByteToInt(input[4], input[5]);
   output.push_back( (byte) (ceil( (float) coils_to_read/8 )) );
-  int coils_address = ByteToInt(input[2], input[3]) + 1;
+  int coils_address = ByteToInt(input[2], input[3]);
 
-  for (i = coils_address + coils_to_read - 1; i >= coils_address; i--)
+  for (i = coils_address + coils_to_read; i > coils_address; i--)
   {
-    if (i == 20) {}
+    if (this->digital_output[i-1])
+    {
+      coils_value <<= 1;
+      coils_value ^= ONE;
+    }
     else
     {
-      if (this->digital_output[i])
-      {
-        coils_value <<= 1;
-        coils_value ^= ONE;
-      }
-      else
-      {
-        coils_value <<= 1;
-        coils_value ^= ZERO;
-      }
-      counter++;
-      if (counter % 8 == 0 or i == coils_address)
-      {
-        output.push_back(coils_value);
-        coils_value = ZERO;
-      }
+      coils_value <<= 1;
+      coils_value ^= ZERO;
+    }
+
+    counter++;
+    if (counter == 8)
+    {
+      output.push_back(coils_value);
+      coils_value = ZERO;
+      counter = 0;
     }
   }
+
+  if (counter != 0)
+    output.push_back(coils_value);
 
   AddVector(&output, CRC16(output));
 
