@@ -46,22 +46,52 @@ vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
 {
   vector<byte> output;
   int i = 0;
-  byte coil_value = 0x0;
+  int counter = 0;
+  byte coils_value = 0x0;
 
   output.push_back(input[0]);
   output.push_back(input[1]);
   int coils_to_read = ByteToInt(input[4], input[5]);
-  output.push_back((byte)(coils_to_read));
-
+  output.push_back( (byte) (ceil( (float) coils_to_read/8 )) );
   int coils_address = ByteToInt(input[2], input[3]);
-  for (i = 0; i < coils_to_read; i++)
-    if (this->digital_output[coils_address+i])
-    {
-      coil_value <<= 1;
-      coil_value ^= ONE;
-    }
 
-  output.push_back(coil_value);
+  if (coils_to_read == 1)
+  {
+    if (this->digital_output[coils_to_read + coils_address])
+    {
+      coils_value <<= 1;
+      coils_value ^= ONE;
+    }
+    else
+    {
+      coils_value <<= 1;
+      coils_value ^= ZERO;
+    }
+  }
+  else
+  {
+    for (i = coils_to_read + coils_address; i > coils_address+1; i--)
+    {
+      if (this->digital_output[i-1])
+      {
+        coils_value <<= 1;
+        coils_value ^= ONE;
+      }
+      else
+      {
+        coils_value <<= 1;
+        coils_value ^= ZERO;
+      }
+      counter++;
+      if (counter % 8 == 0)
+      {
+        output.push_back(coils_value);
+        coils_value = ZERO;
+      }
+    }
+  }
+
+  output.push_back(coils_value);
 
   AddVector(&output, CRC16(output));
 
@@ -188,7 +218,7 @@ void ModbusServer::SetData()
 {
   unsigned int i;
   //Digital Output
-  for (i = 0; i < this->digital_output.size(); i+=2)
+  for (i = 1; i < this->digital_output.size(); i+=2)
     this->digital_output[i] = true;
 
   //Analog Output
