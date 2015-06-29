@@ -20,6 +20,10 @@ ModbusServer::ModbusServer(byte id)
   //Digital Output
   for (i = 0; i < this->digital_output.size(); i+=2)
     this->digital_output[i] = true;
+
+  //Analog Output
+  for (i = 0; i < this->analog_output.size(); i++)
+    this->analog_output[i] = i * ANALOG_OUTPUT_FACTOR;
 }
 
 ModbusServer::~ModbusServer() { }
@@ -47,6 +51,11 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
         PrintVectors();
         return output;
         break;
+      case 0x0F:
+        output = WriteDigitalOutputMultiple_0F(recibido);
+        PrintVectors();
+        return output;
+        break;
     }
 
   return output;
@@ -61,9 +70,9 @@ vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
 
   output.push_back(input[0]);
   output.push_back(input[1]);
-  int coils_to_read = ByteToInt(input[4], input[5]);
+  int coils_to_read = BytesToInt(input[4], input[5]);
   output.push_back( (byte) (ceil( (float) coils_to_read/8 )) );
-  int coils_address = ByteToInt(input[2], input[3]);
+  int coils_address = BytesToInt(input[2], input[3]);
 
   for (i = coils_address + coils_to_read; i > coils_address; i--)
   {
@@ -102,9 +111,9 @@ vector<byte> ModbusServer::ReadAnalogOutput_03(vector<byte> input)
 
   output.push_back(input[0]);
   output.push_back(input[1]);
-  int coils_to_read = ByteToInt(input[4], input[5]);
+  int coils_to_read = BytesToInt(input[4], input[5]);
   output.push_back((byte)(2 * coils_to_read));
-  int coils_address = ByteToInt(input[2], input[3]);
+  int coils_address = BytesToInt(input[2], input[3]);
 
   for (i = 0; i < coils_to_read; i++)
     AddVector(&output, IntToByte(this->analog_output[coils_address + i]));
@@ -124,9 +133,9 @@ vector<byte> ModbusServer::WriteDigitalOutput_05(vector<byte> input)
   output.push_back(input[2]);
   output.push_back(input[3]);
 
-  int coils_address = ByteToInt(input[2], input[3]);
+  int coils_address = BytesToInt(input[2], input[3]);
 
-  operation = ByteToInt(input[4], input[5]);
+  operation = BytesToInt(input[4], input[5]);
 
   if (operation == 0xFF00)
   {
@@ -139,6 +148,34 @@ vector<byte> ModbusServer::WriteDigitalOutput_05(vector<byte> input)
     this->digital_output[coils_address] = false;
     output.push_back(input[4]);
     output.push_back(input[5]);
+  }
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
+{
+  vector<byte> output;
+  int i;
+
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  output.push_back(input[2]);
+  output.push_back(input[3]);
+  output.push_back(input[4]);
+  output.push_back(input[5]);
+
+  int coils_address = BytesToInt(input[2], input[3]);
+  int coils_to_read = BytesToInt(input[4], input[5]);
+  int bytes = ByteToInt(input[6]);
+
+
+  for (i = 0; i < bytes; i++)
+  {
+    int byte = ByteToInt(input[i+7]);
+    int a = 0;
   }
 
   AddVector(&output, CRC16(output));
@@ -176,9 +213,14 @@ void ModbusServer::PrintQueryVector(vector<byte> input)
   cout << "]" << endl;
 }
 
-int ModbusServer::ByteToInt(byte byte1, byte byte2)
+int ModbusServer::BytesToInt(byte byte1, byte byte2)
 {
   return ( (int) byte2 ) + ( (int) byte1 << 8 );
+}
+
+int ModbusServer::ByteToInt(byte byte1)
+{
+  return ( (int) byte1);
 }
 
 vector<byte> ModbusServer::IntToByte(int input)
@@ -246,9 +288,6 @@ void ModbusServer::PrintVectors(void)
 void ModbusServer::SetData()
 {
   unsigned int i;
-  //Analog Output
-  for (i = 0; i < this->analog_output.size(); i++)
-    this->analog_output[i] = i * ANALOG_OUTPUT_FACTOR;
 
   //Analog Input
   for (i = 15; i < this->analog_input.size(); i++)

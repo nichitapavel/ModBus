@@ -157,6 +157,7 @@ int main (int argc, char *argv[]) {
     byte resp[] = { 0x06, 0x01, 0x03, 0x54, 0x55, 0x05, 0x83, 0x7A };
     ok += testea(mbs, "Leemos las salidas digitales de la 1 a la 20", BVEC(peti), BVEC(resp) );
     //Salidas digitales valen ahora [0 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
+    //                              [0 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
   }
   {
     tot++;
@@ -170,6 +171,7 @@ int main (int argc, char *argv[]) {
     byte resp[] = { 0x06, 0x01, 0x03, 0x56, 0x55, 0x05, 0x22, 0xBA };
     ok += testea(mbs, "Leemos las salidas digitales de la 1 a la 20", BVEC(peti), BVEC(resp) );
     //Salidas digitales valen ahora [0 1 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
+    //                              [0 1 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
   }
   {
     tot++;
@@ -183,6 +185,7 @@ int main (int argc, char *argv[]) {
     byte resp[] = { 0x06, 0x01, 0x03, 0x56, 0x57, 0x05, 0x23, 0xDA };
     ok += testea(mbs, "Leemos las salidas digitales de la 1 a la 20", BVEC(peti), BVEC(resp) );
     //Salidas digitales valen ahora [0 1 1 0 1 0 1 0 1 1 1 0 1 0 1 0 1 0 1 0]
+    //                              [0 1 1 0 1 0 1 0 1 1 1 0 1 0 1 0 1 0 1 0]
   }
   {
     tot++;
@@ -196,6 +199,7 @@ int main (int argc, char *argv[]) {
     byte resp[] = { 0x06, 0x01, 0x03, 0x46, 0x57, 0x05, 0x22, 0x1F };
     ok += testea(mbs, "Leemos las salidas digitales de la 1 a la 20", BVEC(peti), BVEC(resp) );
     //Salidas digitales valen ahora [0 1 1 0 0 0 1 0 1 1 1 0 1 0 1 0 1 0 1 0]
+    //                              [0 1 1 0 0 0 1 0 1 1 1 0 1 0 1 0 1 0 1 0]
   }
   {
     tot++;
@@ -209,6 +213,7 @@ int main (int argc, char *argv[]) {
     byte resp[] = { 0x06, 0x01, 0x03, 0x46, 0x57, 0x0D, 0x23, 0xD9 };
     ok += testea(mbs, "Leemos las salidas digitales de la 1 a la 20", BVEC(peti), BVEC(resp) );
     //Salidas digitales valen ahora [0 1 1 0 0 0 1 0 1 1 1 0 1 0 1 0 1 0 1 1]
+    //                              [0 1 1 0 0 0 1 0 1 1 1 0 1 0 1 0 1 0 1 1]
   }
   {
     tot++;
