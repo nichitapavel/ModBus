@@ -51,8 +51,18 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
         PrintVectors();
         return output;
         break;
+      case 0x06:
+        output = WriteAnalogOutput_06(recibido);
+        PrintVectors();
+        return output;
+        break;
       case 0x0F:
         output = WriteDigitalOutputMultiple_0F(recibido);
+        PrintVectors();
+        return output;
+        break;
+      case 0x10:
+        output = WriteAnalogOutputMultiple_10(recibido);
         PrintVectors();
         return output;
         break;
@@ -199,6 +209,55 @@ vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
       this->digital_output[j] = coil;
     }
   }
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::WriteAnalogOutput_06(vector<byte> input)
+{
+  vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  output.push_back(input[2]);
+  output.push_back(input[3]);
+  output.push_back(input[4]);
+  output.push_back(input[5]);
+
+  int coil_address = BytesToInt(input[2], input[3]);
+  int coil_value = BytesToInt(input[4], input[5]);
+  this->analog_output[coil_address] = coil_value;
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::WriteAnalogOutputMultiple_10(vector<byte> input)
+{
+  vector<byte> output;
+  int i;
+
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  output.push_back(input[2]);
+  output.push_back(input[3]);
+  output.push_back(input[4]);
+  output.push_back(input[5]);
+
+  int coils_address = BytesToInt(input[2], input[3]);
+  //int coils_to_read = BytesToInt(input[4], input[5]);
+  int coils_to_read = ByteToInt(input[6]);
+
+  vector<int> intermediate;
+  for (i = 0; i < coils_to_read; i += 2)
+    intermediate.push_back(BytesToInt(input[7 + i], input[7 + i + 1]));
+
+  for (i = 0; i < coils_to_read/2; i++)
+    this->analog_output[coils_address+i] = intermediate[i];
+
 
   AddVector(&output, CRC16(output));
 

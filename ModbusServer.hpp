@@ -58,7 +58,9 @@ private:
   vector<byte> ReadDigitalOutput_01(vector<byte> input);
   vector<byte> ReadAnalogOutput_03(vector<byte> input);
   vector<byte> WriteDigitalOutput_05(vector<byte> input);
+  vector<byte> WriteAnalogOutput_06(vector<byte> input);
   vector<byte> WriteDigitalOutputMultiple_0F(vector<byte> input);
+  vector<byte> WriteAnalogOutputMultiple_10(vector<byte> input);
 };
 
 
