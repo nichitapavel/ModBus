@@ -14,7 +14,7 @@
 
 //si vale 0 se haran todas las pruebas aunque fallen
 //si vale 1 se parará desde que falle la primera
-int SalSiFallo = 0;
+int SalSiFallo = 1;
 
 #define BVEC(v) vector<byte>( v, v + sizeof(v)/sizeof(byte) )
 

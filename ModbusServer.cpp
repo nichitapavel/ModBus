@@ -104,8 +104,6 @@ vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
     coils_value = ZERO;
   }
 
-
-
   AddVector(&output, CRC16(output));
 
   return output;
@@ -165,7 +163,7 @@ vector<byte> ModbusServer::WriteDigitalOutput_05(vector<byte> input)
 vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
 {
   vector<byte> output;
-  int i;
+  int i, j;
 
   output.push_back(input[0]);
   output.push_back(input[1]);
@@ -181,8 +179,25 @@ vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
 
   for (i = 0; i < bytes; i++)
   {
+    int j_inicio, j_fin;
+
+    j_inicio = coils_address + 8 * i;
+    if (coils_to_read - 8 > 0)
+    {
+      j_fin = j_inicio + 8;
+      coils_to_read -= 8;
+    }
+    else
+      j_fin = j_inicio + coils_to_read;
+
     int byte = ByteToInt(input[i+7]);
-    int a = 0;
+    for (j = j_inicio; j < j_fin; j++)
+    {
+      bool coil = byte & ONE;
+      byte >>= 1;
+
+      this->digital_output[j] = coil;
+    }
   }
 
   AddVector(&output, CRC16(output));
