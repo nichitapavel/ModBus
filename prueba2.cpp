@@ -220,7 +220,7 @@ int main (int argc, char *argv[]) {
   }
   {
     tot++;
-    byte peti[] = { 0x06, 0x05, 0x00, 0x01, 0xFF, 0xFF, 0x9C, 0x0D };
+    byte peti[] = { 0x06, 0x05, 0x00, 0x01, 0xFF, 0xFF, 0x9C, 0x0D };/////////////-----------------------------------
     byte resp[] = { 0x06, 0x85, 0x03, 0xB3, 0x50 };
     ok += testea(mbs, "Forzamos única salida digital 1 con valor incorrecto FF FF", BVEC(peti), BVEC(resp) );
   }

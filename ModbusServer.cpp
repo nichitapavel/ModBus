@@ -4,12 +4,17 @@
 #define ANALOG_OUTPUT_FACTOR 4
 #define ONE 0x00000001
 #define ZERO 0x00000000
+#define M128 0x80
+#define DIGITAL_SIZE 20
+#define ANALOG_SIZE 10
 
 using namespace std;
 
 ModbusServer::ModbusServer(byte id)
 {
   this->begin_time = clock();
+
+  this->id = id;
 
   this->digital_output = vector<bool> (20, false);
   this->digital_input = vector<bool> (20, false);
@@ -34,39 +39,61 @@ vector<byte> ModbusServer::peticion(vector<byte> recibido)
 
   SetData();
 
-    switch (recibido[1])
-    {
-      case 0x01:
-        output = ReadDigitalOutput_01(recibido);
-        PrintVectors();
-        return output;
-        break;
-      case 0x03:
-        output = ReadAnalogOutput_03(recibido);
-        PrintVectors();
-        return output;
-        break;
-      case 0x05:
-        output = WriteDigitalOutput_05(recibido);
-        PrintVectors();
-        return output;
-        break;
-      case 0x06:
-        output = WriteAnalogOutput_06(recibido);
-        PrintVectors();
-        return output;
-        break;
-      case 0x0F:
-        output = WriteDigitalOutputMultiple_0F(recibido);
-        PrintVectors();
-        return output;
-        break;
-      case 0x10:
-        output = WriteAnalogOutputMultiple_10(recibido);
-        PrintVectors();
-        return output;
-        break;
-    }
+  if (recibido[0] != this->id)
+  {
+    PrintVectors();
+    return output;
+  }
+
+  if (!CheckCRC(recibido))
+  {
+    PrintVectors();
+    return output;
+  }
+
+  switch (recibido[1])
+  {
+    case 0x01:
+      output = ReadDigitalOutput_01(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x03:
+      output = ReadAnalogOutput_03(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x04:
+      output = WriteAnalogInput_04(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x05:
+      output = WriteDigitalOutput_05(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x06:
+      output = WriteAnalogOutput_06(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x0F:
+      output = WriteDigitalOutputMultiple_15(recibido);
+      PrintVectors();
+      return output;
+      break;
+    case 0x10:
+      output = WriteAnalogOutputMultiple_16(recibido);
+      PrintVectors();
+      return output;
+      break;
+    default:
+      output = ErrorIllegalFunction_01(recibido);
+      PrintVectors();
+      return output;
+      break;
+  }
 
   return output;
 }
@@ -83,6 +110,11 @@ vector<byte> ModbusServer::ReadDigitalOutput_01(vector<byte> input)
   int bytes = (byte) (ceil( (float) coils_to_read/8 ));
   output.push_back(bytes);
   int coils_address = BytesToInt(input[2], input[3]);
+
+  if (coils_address < ZERO or coils_address > DIGITAL_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+  if (coils_address + coils_to_read < ZERO or coils_address + coils_to_read > DIGITAL_SIZE )
+    return ErrorIllegalDataAddress_02(input);
 
   for (i = 0; i < bytes; i++)
   {
@@ -130,10 +162,25 @@ vector<byte> ModbusServer::ReadAnalogOutput_03(vector<byte> input)
   output.push_back((byte)(2 * coils_to_read));
   int coils_address = BytesToInt(input[2], input[3]);
 
+  if (coils_address < ZERO or coils_address > ANALOG_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+  if (coils_address + coils_to_read < ZERO or coils_address + coils_to_read > ANALOG_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+
   for (i = 0; i < coils_to_read; i++)
     AddVector(&output, IntToByte(this->analog_output[coils_address + i]));
 
   AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::WriteAnalogInput_04(vector<byte> input)
+{
+  vector<byte> output;
+
+  if (input.size() != 8)
+    return ErrorIllegalDataValue_03(input);
 
   return output;
 }
@@ -150,7 +197,13 @@ vector<byte> ModbusServer::WriteDigitalOutput_05(vector<byte> input)
 
   int coils_address = BytesToInt(input[2], input[3]);
 
+  if (coils_address < ZERO or coils_address > DIGITAL_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+
   operation = BytesToInt(input[4], input[5]);
+
+  if (operation != 0xFF00 && operation != 0x0000 )
+    return ErrorIllegalDataValue_03(input);
 
   if (operation == 0xFF00)
   {
@@ -170,7 +223,31 @@ vector<byte> ModbusServer::WriteDigitalOutput_05(vector<byte> input)
   return output;
 }
 
-vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
+vector<byte> ModbusServer::WriteAnalogOutput_06(vector<byte> input)
+{
+  vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1]);
+  output.push_back(input[2]);
+  output.push_back(input[3]);
+  output.push_back(input[4]);
+  output.push_back(input[5]);
+
+  int coils_address = BytesToInt(input[2], input[3]);
+  int coils_value = BytesToInt(input[4], input[5]);
+
+  if (coils_address < ZERO or coils_address > ANALOG_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+
+  this->analog_output[coils_address] = coils_value;
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::WriteDigitalOutputMultiple_15(vector<byte> input)
 {
   vector<byte> output;
   int i, j;
@@ -186,6 +263,10 @@ vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
   int coils_to_read = BytesToInt(input[4], input[5]);
   int bytes = ByteToInt(input[6]);
 
+  if (coils_address < ZERO or coils_address > DIGITAL_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+  if (coils_address + coils_to_read < ZERO or coils_address + coils_to_read > DIGITAL_SIZE )
+    return ErrorIllegalDataAddress_02(input);
 
   for (i = 0; i < bytes; i++)
   {
@@ -215,27 +296,7 @@ vector<byte> ModbusServer::WriteDigitalOutputMultiple_0F(vector<byte> input)
   return output;
 }
 
-vector<byte> ModbusServer::WriteAnalogOutput_06(vector<byte> input)
-{
-  vector<byte> output;
-
-  output.push_back(input[0]);
-  output.push_back(input[1]);
-  output.push_back(input[2]);
-  output.push_back(input[3]);
-  output.push_back(input[4]);
-  output.push_back(input[5]);
-
-  int coil_address = BytesToInt(input[2], input[3]);
-  int coil_value = BytesToInt(input[4], input[5]);
-  this->analog_output[coil_address] = coil_value;
-
-  AddVector(&output, CRC16(output));
-
-  return output;
-}
-
-vector<byte> ModbusServer::WriteAnalogOutputMultiple_10(vector<byte> input)
+vector<byte> ModbusServer::WriteAnalogOutputMultiple_16(vector<byte> input)
 {
   vector<byte> output;
   int i;
@@ -248,8 +309,15 @@ vector<byte> ModbusServer::WriteAnalogOutputMultiple_10(vector<byte> input)
   output.push_back(input[5]);
 
   int coils_address = BytesToInt(input[2], input[3]);
-  //int coils_to_read = BytesToInt(input[4], input[5]);
+  int coils_bytes = BytesToInt(input[4], input[5]);
   int coils_to_read = ByteToInt(input[6]);
+
+  if (coils_address < ZERO or coils_address > ANALOG_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+  if (coils_address + coils_bytes < ZERO or coils_address + coils_bytes > ANALOG_SIZE )
+    return ErrorIllegalDataAddress_02(input);
+  if (input.size() != (unsigned)coils_to_read + 9)
+    return ErrorIllegalDataValue_03(input);
 
   vector<int> intermediate;
   for (i = 0; i < coils_to_read; i += 2)
@@ -407,4 +475,69 @@ void ModbusServer::SetData()
   for (i = 0; i < DIGITAL_INPUT_CAP; i++)
     if(this->analog_input[i] % 2 == 0)
       this->digital_input[i] = true;
+}
+
+vector<byte> ModbusServer::ErrorCheck(vector<byte> input)
+{
+  vector<byte> a;
+  return a;
+}
+
+bool ModbusServer::CheckCRC(vector<byte> input)
+{
+  unsigned int i;
+  vector<byte> crc_nuevo;
+  vector<byte> crc_viejo;
+
+  for (i = 0; i < input.size() - 2; i++)
+    crc_nuevo.push_back(input[i]);
+
+  crc_nuevo = CRC16(crc_nuevo);
+  crc_viejo.push_back(input[input.size() - 2]);
+  crc_viejo.push_back(input[input.size() - 1]);
+
+  for (i = 0; i < 2; i++)
+    if (crc_nuevo[i] != crc_viejo[i])
+      return false;
+
+  return true;
+}
+
+vector<byte> ModbusServer::ErrorIllegalFunction_01(vector<byte> input)
+{
+  vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1] ^ M128);
+  output.push_back(0x01);
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::ErrorIllegalDataAddress_02(vector<byte> input)
+{
+  vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1] ^ M128);
+  output.push_back(0x02);
+
+  AddVector(&output, CRC16(output));
+
+  return output;
+}
+
+vector<byte> ModbusServer::ErrorIllegalDataValue_03(vector<byte> input)
+{
+  vector<byte> output;
+
+  output.push_back(input[0]);
+  output.push_back(input[1] ^ M128);
+  output.push_back(0x03);
+
+  AddVector(&output, CRC16(output));
+
+  return output;
 }

@@ -30,6 +30,7 @@ using namespace std;
 class  ModbusServer {
 
 public:
+  byte id;
   clock_t begin_time;
   vector<bool> digital_output;
   vector<bool> digital_input;
@@ -54,13 +55,20 @@ private:
   vector<byte> CRC16( vector<byte> mensaje);
   void PrintVectors(void);
   void SetData(void);
+  vector<byte> ErrorCheck(vector<byte> input);
+  bool CheckCRC(vector<byte> input);
+
+  vector<byte> ErrorIllegalFunction_01(vector<byte> input);
+  vector<byte> ErrorIllegalDataAddress_02(vector<byte> input);
+  vector<byte> ErrorIllegalDataValue_03(vector<byte> input);
 
   vector<byte> ReadDigitalOutput_01(vector<byte> input);
   vector<byte> ReadAnalogOutput_03(vector<byte> input);
+  vector<byte> WriteAnalogInput_04(vector<byte> input);
   vector<byte> WriteDigitalOutput_05(vector<byte> input);
   vector<byte> WriteAnalogOutput_06(vector<byte> input);
-  vector<byte> WriteDigitalOutputMultiple_0F(vector<byte> input);
-  vector<byte> WriteAnalogOutputMultiple_10(vector<byte> input);
+  vector<byte> WriteDigitalOutputMultiple_15(vector<byte> input);
+  vector<byte> WriteAnalogOutputMultiple_16(vector<byte> input);
 };
 
 
