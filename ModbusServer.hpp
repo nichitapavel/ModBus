@@ -55,6 +55,7 @@ private:
   vector<byte> CRC16( vector<byte> mensaje);
   void PrintVectors(void);
   void SetData(void);
+  void UpdateData(int bytes_recibidos);
   vector<byte> ErrorCheck(vector<byte> input);
   bool CheckCRC(vector<byte> input);
 
@@ -63,6 +64,7 @@ private:
   vector<byte> ErrorIllegalDataValue_03(vector<byte> input);
 
   vector<byte> ReadDigitalOutput_01(vector<byte> input);
+  vector<byte> ReadDigitalInput_02(vector<byte> input);
   vector<byte> ReadAnalogOutput_03(vector<byte> input);
   vector<byte> WriteAnalogInput_04(vector<byte> input);
   vector<byte> WriteDigitalOutput_05(vector<byte> input);
