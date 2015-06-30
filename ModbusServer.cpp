@@ -15,6 +15,9 @@ ModbusServer::ModbusServer(byte id)
   this->id = id;
   this->begin_time = clock();
   SetData();
+  cout << "===== Datos Iniciales =====" << endl;
+  PrintVectors();
+  cout << endl;
 }
 
 ModbusServer::~ModbusServer() { }
@@ -517,7 +520,6 @@ void ModbusServer::SetData()
   for (i = 0; i < this->analog_output.size(); i++)
     this->analog_output[i] = i * ANALOG_OUTPUT_FACTOR;
 
-
   //Analog Input
   for (i = 15; i < this->analog_input.size(); i++)
     if (i % 2 == 0)
@@ -541,11 +543,8 @@ void ModbusServer::SetData()
   this->analog_input[8] = getpid();
   this->analog_input[9] = getppid();
   //Los 2 [10-11] siguientes: segundos y milisegundos de computo del proceso
-  float end_time = float( clock () - this->begin_time ) /  CLOCKS_PER_SEC;
-  double seconds;
-  float milisec = modf(end_time, &seconds);
-  this->analog_input[10] = (int) seconds;
-  this->analog_input[11] = (int) (milisec * 1000);
+  this->analog_input[10] = 0;
+  this->analog_input[11] = 0;
   //Los 3 [12-14] siguientes: contador peticiones recibidas, numero de bytes recibido, numero de bytes enviado
   this->analog_input[12] = 0;
   this->analog_input[13] = 0;
@@ -584,7 +583,7 @@ void ModbusServer::UpdateData(int bytes_recibidos)
   this->analog_input[8] = getpid();
   this->analog_input[9] = getppid();
   //Los 2 [10-11] siguientes: segundos y milisegundos de computo del proceso
-  float end_time = float( clock () - this->begin_time ) /  CLOCKS_PER_SEC;
+  float end_time = float (clock () - this->begin_time ) / CLOCKS_PER_SEC;
   double seconds;
   float milisec = modf(end_time, &seconds);
   this->analog_input[10] = (int) seconds;
@@ -597,12 +596,6 @@ void ModbusServer::UpdateData(int bytes_recibidos)
   for (i = 0; i < DIGITAL_INPUT_CAP; i++)
     if(this->analog_input[i] % 2 == 0)
       this->digital_input[i] = true;
-}
-
-vector<byte> ModbusServer::ErrorCheck(vector<byte> input)
-{
-  vector<byte> a;
-  return a;
 }
 
 bool ModbusServer::CheckCRC(vector<byte> input)
