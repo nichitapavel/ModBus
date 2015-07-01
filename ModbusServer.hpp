@@ -42,6 +42,8 @@ public:
   ~ModbusServer();
 
   vector<byte> peticion( vector<byte> recibido );
+  vector<byte> CRC16(vector<byte> mensaje);
+  void AddVector(vector<byte> *vector_1, vector<byte> vector_2);
 
 private:
   void SetData(void);
@@ -53,10 +55,7 @@ private:
   vector<byte> IntToByte(int input);
 
   vector<byte> CRC16(vector<byte> mensaje, int len);
-  vector<byte> CRC16(vector<byte> mensaje);
   bool CheckCRC(vector<byte> input);
-
-  void AddVector(vector<byte> *vector_1, vector<byte> vector_2);
 
   void PrintDigitalVector(vector<bool> input, string str);
   void PrintAnalogVector(vector<int> input, string str);
