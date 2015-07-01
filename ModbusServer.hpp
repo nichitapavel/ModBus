@@ -31,7 +31,8 @@ class  ModbusServer {
 
 public:
   byte id;
-  clock_t begin_time;
+  clock_t start_milis;
+  time_t start_seconds;
   vector<bool> digital_output;
   vector<bool> digital_input;
   vector<int> analog_output;
@@ -43,21 +44,23 @@ public:
   vector<byte> peticion( vector<byte> recibido );
 
 private:
-  void PrintDigitalVector(vector<bool> input, string str);
-  void PrintAnalogVector(vector<int> input, string str);
-  void PrintQueryVector(vector<byte> input);
+  void SetData(void);
+  void UpdateData(int bytes_recibidos);
 
   int BytesToInt(byte byte1, byte byte2);
   int ByteToInt(byte byte1);
+
   vector<byte> IntToByte(int input);
-  void AddVector(vector<byte> *vector_1, vector<byte> vector_2);
-  vector<byte> CRC16( vector<byte> mensaje, int len);
-  vector<byte> CRC16( vector<byte> mensaje);
-  void PrintVectors(void);
-  void SetData(void);
-  void UpdateData(int bytes_recibidos);
-  vector<byte> ErrorCheck(vector<byte> input);
+
+  vector<byte> CRC16(vector<byte> mensaje, int len);
+  vector<byte> CRC16(vector<byte> mensaje);
   bool CheckCRC(vector<byte> input);
+
+  void AddVector(vector<byte> *vector_1, vector<byte> vector_2);
+
+  void PrintDigitalVector(vector<bool> input, string str);
+  void PrintAnalogVector(vector<int> input, string str);
+  void PrintVectors(void);
 
   vector<byte> ErrorIllegalFunction_01(vector<byte> input);
   vector<byte> ErrorIllegalDataAddress_02(vector<byte> input);

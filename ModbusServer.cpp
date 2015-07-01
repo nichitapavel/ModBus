@@ -13,7 +13,8 @@ using namespace std;
 ModbusServer::ModbusServer(byte id)
 {
   this->id = id;
-  this->begin_time = clock();
+  this->start_milis = clock();
+  time(&this->start_seconds);
   SetData();
   cout << "===== Datos Iniciales =====" << endl;
   PrintVectors();
@@ -421,16 +422,6 @@ void ModbusServer::PrintAnalogVector(vector<int> input, string str)
   cout << "]" << endl;
 }
 
-void ModbusServer::PrintQueryVector(vector<byte> input)
-{
-  unsigned int i;
-
-  cout << "Query -> [ ";
-  for (i = 0; i < input.size(); i++)
-    cout << input[i] << " ";
-  cout << "]" << endl;
-}
-
 int ModbusServer::BytesToInt(byte byte1, byte byte2)
 {
   return ( (int) byte2 ) + ( (int) byte1 << 8 );
@@ -569,6 +560,7 @@ void ModbusServer::UpdateData(int bytes_recibidos)
 
   time_t timer = time(NULL);
   tm* y2k = localtime(&timer);
+  cout << "******************** " << asctime (y2k) << endl;
 
   //Los 6 [0-5] primeros: año, mes, dia, hora, minuto, segundo
   this->analog_input[0] = y2k->tm_year + 1900;
@@ -577,17 +569,21 @@ void ModbusServer::UpdateData(int bytes_recibidos)
   this->analog_input[3] = y2k->tm_hour;
   this->analog_input[4] = y2k->tm_min;
   this->analog_input[5] = y2k->tm_sec;
+
   //Los 4 [6-9] siguientes: UID, GID, PID, PPID
   this->analog_input[6] = getuid();
   this->analog_input[7] = getgid();
   this->analog_input[8] = getpid();
   this->analog_input[9] = getppid();
+
   //Los 2 [10-11] siguientes: segundos y milisegundos de computo del proceso
-  float end_time = float (clock () - this->begin_time ) / CLOCKS_PER_SEC;
-  double seconds;
-  float milisec = modf(end_time, &seconds);
-  this->analog_input[10] = (int) seconds;
-  this->analog_input[11] = (int) (milisec * 1000);
+  time_t stop_seconds = time(&stop_seconds);
+  this->analog_input[10] = (int) difftime(stop_seconds, this->start_seconds);
+
+  clock_t stop_milis = clock();
+  double milis = double (stop_milis - this->start_milis) / CLOCKS_PER_SEC;
+  this->analog_input[11] = (int) (milis * 1000);
+
   //Los 3 [12-14] siguientes: contador peticiones recibidas, numero de bytes recibido, numero de bytes enviado
   this->analog_input[12] += 1;
   this->analog_input[13] += bytes_recibidos;
