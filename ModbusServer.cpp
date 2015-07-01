@@ -25,7 +25,7 @@ ModbusServer::~ModbusServer() { }
 
 vector<byte> ModbusServer::peticion(vector<byte> recibido)
 {
-  vector<byte> output;
+  vector<byte> output (0);
 
   UpdateData(recibido.size());
 

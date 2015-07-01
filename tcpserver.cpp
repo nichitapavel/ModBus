@@ -11,6 +11,7 @@
 
 #include <vector>
 #include "ModbusServer.hpp"
+//#include "ModbusServer.cpp"
 typedef unsigned char byte;
 
 int main()
@@ -115,18 +116,23 @@ int main()
        */
       mbs.AddVector(&input, mbs.CRC16(input));
       output = mbs.peticion(input);
-      output.pop_back();
-      output.pop_back();
 
-      msg[5] = (char) output.size();
-      unsigned int i;
-      for (i = 0; i < output.size(); i++)
-        msg[6+i] = output[i];
+      if (output.size() != 0)
+      {
+        output.pop_back();
+        output.pop_back();
 
-      std::cout << "send()ing back a message..."  << std::endl;
-      int len = 6 + output.size();
-      ssize_t bytes_sent;
-      bytes_sent = send(new_sd, msg, len, 0);
+        msg[5] = (char) output.size();
+        unsigned int i;
+        for (i = 0; i < output.size(); i++)
+          msg[6+i] = output[i];
+
+        std::cout << "send()ing back a message..."  << std::endl;
+        int len = 6 + output.size();
+        ssize_t bytes_sent;
+        bytes_sent = send(new_sd, msg, len, 0);
+      }
+
     }
     std::cout << "Stopping server..." << std::endl;
     freeaddrinfo(host_info_list);
