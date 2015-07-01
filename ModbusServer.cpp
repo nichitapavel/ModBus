@@ -560,7 +560,6 @@ void ModbusServer::UpdateData(int bytes_recibidos)
 
   time_t timer = time(NULL);
   tm* y2k = localtime(&timer);
-  cout << "******************** " << asctime (y2k) << endl;
 
   //Los 6 [0-5] primeros: año, mes, dia, hora, minuto, segundo
   this->analog_input[0] = y2k->tm_year + 1900;
